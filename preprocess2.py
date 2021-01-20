@@ -12,7 +12,18 @@ def read_and_preprocess2(kFolds):
 
     ### Preprocessing ###
     # Choose features
-    data = data.iloc[:, [1, 2, 3, 6, 7, 8, 9, 11, 12, 13, 14, 15, 18, 19, 20]]
+    data = data.iloc[:, [1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 19, 20]]
+
+    # Delete players with only few swipes
+    counts = data["playerID"].value_counts(ascending=True)
+    IDsToDelete = [i for i, v in counts.iteritems() if v < kFolds]
+    for i in IDsToDelete:
+        data = data[data['playerID'] != i]
+
+    # Rename playerIDs
+    playerID = sorted(set(data["playerID"]))
+    playerIDDict = dict(zip(playerID, list(range(len(playerID)))))
+    data.loc[:, 'playerID'] = data.copy()["playerID"].map(playerIDDict)
 
     # Games
     screen = data["screen"]
@@ -26,15 +37,6 @@ def read_and_preprocess2(kFolds):
                 screenDict[screen] = game
                 break
     data["screen"] = data.copy()["screen"].map(screenDict)
-
-
-    # Replace screen with game type
-    # start = time.perf_counter()
-    # dataTemp = data["screen"]
-    # for i in range(data.shape[0]):
-    #     data.iloc[i, 0] = dataTemp[i].split()[0]
-    # end = time.perf_counter()
-    # print(f"\nExecution time = {end - start}")
 
 
     # Direction
@@ -61,7 +63,7 @@ def read_and_preprocess2(kFolds):
     # for i in range(len(dataSVM.columns)):
     #     print(dataSVM.iloc[:, i].describe(percentiles=[0.001,0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.975, 0.99, 0.999]))
 
-    # X and y
+    # X, y
     X = data.loc[:, data.columns != "screen"]
     y = data["screen"]
     return X, y

@@ -6,6 +6,7 @@ from sklearn import preprocessing
 from sklearn import svm
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import cross_val_score
+from sklearn.neighbors import KNeighborsClassifier
 
 from preprocess import read_and_preprocess
 
@@ -14,7 +15,7 @@ pd.set_option('display.max_rows', None)
 
 # Read and preprocess
 kFolds = 4
-X, y = read_and_preprocess(kFolds)
+X, y = read_and_preprocess(kFolds, False)
 
 # Feature selection kbest
 # = SelectKBest(k=10).fit_transform(X, y)
@@ -28,11 +29,12 @@ X, y = read_and_preprocess(kFolds)
 X = preprocessing.StandardScaler().fit_transform(X)
 pca = decomposition.PCA().fit(X)
 Xpca = pca.transform(X)
-model = svm.SVC(kernel='poly')
+#model = svm.SVC(kernel='poly')
+model = KNeighborsClassifier(n_neighbors=7)
 
 start = time.perf_counter()
 print(model)
-for i in range(9,10):
+for i in range(1, 10):
     print(f"i = {i}")
     model = svm.SVC(kernel='poly')
     XScores = Xpca[:, 0:i]
