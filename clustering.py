@@ -3,9 +3,9 @@ import os
 import time
 
 #explicitly require this experimental feature
-from sklearn.experimental import enable_hist_gradient_boosting  # noqa
+#from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 #now you can import normally from ensemble
-from sklearn.ensemble import HistGradientBoostingClassifier
+#from sklearn.ensemble import HistGradientBoostingClassifier
 
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.ensemble import IsolationForest
@@ -19,6 +19,7 @@ from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.decomposition import FastICA
+from sklearn.cluster import KMeans
 from sklearn.ensemble import VotingClassifier
 from sklearn.ensemble import BaggingClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -28,6 +29,7 @@ from sklearn.ensemble import BaggingClassifier
 from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import StackingClassifier
+from sklearn.cluster import DBSCAN
 # from sklearn.model_selection import cross_val_score
 # from sklearn.model_selection import StratifiedKFold
 # from sklearn.feature_selection import SelectFromModel
@@ -59,6 +61,9 @@ useIsomap = False
 nEpochs = 30
 nComponents = 10
 kNeighbors = 15
+k = 2
+eps = 6
+minSamples = 5
 pca1 = PCA(n_components=nComponents)
 pca2 = PCA(n_components=nComponents)
 ica1 = FastICA(n_components=nComponents, max_iter=800, random_state=0)
@@ -74,6 +79,7 @@ if usePCA or useICA or useIsomap:
 
 ### Read data ###
 kFolds = 4
+
 X, y = read_and_preprocess(kFolds, True)
 
 ### First Classification ###
@@ -113,24 +119,6 @@ y_train21 = trainGame1["playerID"]
 scaler21 = preprocessing.StandardScaler().fit(X_train21)
 X_train21 = pd.DataFrame(scaler21.transform(X_train21.values), columns=X_train21.columns, index=X_train21.index)
 
-# Models
-#model21 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80), max_iter=nEpochs, random_state=0)
-#model21 = DecisionTreeClassifier(criterion='gini', random_state=0)
-#model21 = KNeighborsClassifier(n_neighbors=11)
-#model21 = svm.SVC(gamma=1, kernel='poly')
-forest = RandomForestClassifier(n_estimators=75,max_features=8, random_state=0, n_jobs=1)
-#model21 = BaggingClassifier(max_features=8, n_estimators=60, n_jobs=1, random_state=0)
-#model21 = AdaBoostClassifier(base_estimator = svm.SVC(gamma=1, kernel='poly'),algorithm='SAMME',n_estimators=25, random_state=0)
-#model21 = HistGradientBoostingClassifier(random_state=0)
-#model21 = GradientBoostingClassifier(n_estimators=25,random_state=0)
-#model21 = ExtraTreesClassifier(n_estimators=40, random_state=0)
-#model21 = IsolationForest(n_estimators=40,random_state=0)
-tree = DecisionTreeClassifier(criterion='entropy', random_state=0)
-knn = KNeighborsClassifier(n_neighbors=9)
-svc = svm.SVC(gamma=1, kernel='poly')
-mlp = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80), max_iter=300, random_state=0)
-model21 = StackingClassifier(estimators=[('mlp',mlp),('forest',forest)], final_estimator=knn, cv=4)
-# model21 = VotingClassifier(estimators=[('RandomForest', forest), ('svc', svc), ('mlp', mlp)],voting='hard')
 if useTF:
     model21 = tfModel(len(set(y_train21)))
 if usePCA:
@@ -140,47 +128,26 @@ if useICA:
 if useIsomap:
     X_train21 = iso1.fit_transform(X_train21)
 
-# Training
-if useTF:
-    if not (usePCA or useICA or useIsomap):
-        X_train21 = X_train21.to_numpy()
-    y_train21CPY = y_train21
-    y_train21 = y_train21.to_numpy()
-    LE1 = preprocessing.LabelEncoder()
-    LE1.fit(y_train21)
-    OneHot1 = OneHotEncoder()
-    y_train21 = OneHot1.fit_transform(y_train21.reshape(-1, 1)).toarray()
-    model21.fit(X_train21, y_train21, validation_split=0.1, epochs=nEpochs)
-    print(model21.summary())
-else:
-    model21.fit(X_train21, y_train21)
-    print(model21)
+# Clustering
+#clusteringTrain1 = KMeans(n_clusters=k, n_init=3, random_state=0)
+clusteringTrain1 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+clusteringTrain1.fit(X_train21)
+silhouetteTrain1 = skm.silhouette_score(X_train21, clusteringTrain1.labels_)
+print("")
+print(clusteringTrain1)
+print(f"Silhoutette train 1: {silhouetteTrain1}")
+
 
 # y_train21 = list(y_train21CPY)
 # distributionTrain11 = {i: y_train21.count(i) for i in set(y_train21)}
 
-# Game 2: Training
+# Game 2: Clustering
 X_train22 = trainGame2.loc[:, trainGame2.columns != "playerID"]
 y_train22 = trainGame2["playerID"]
 scaler22 = preprocessing.StandardScaler().fit(X_train22)
 X_train22 = pd.DataFrame(scaler22.transform(X_train22.values), columns=X_train22.columns, index=X_train22.index)
 
-# Models
-#model22 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80), max_iter=100, random_state=0)
-#model22 = DecisionTreeClassifier(criterion='gini', random_state=0)
-#model22 = KNeighborsClassifier(n_neighbors=11)
-#model22 = svm.SVC(gamma=1, kernel='poly')
-forest = RandomForestClassifier(n_estimators=75,max_features=8, random_state=0, n_jobs=1)
-#model22 = BaggingClassifier(max_features=8, n_estimators=60, n_jobs=1, random_state=0)
-#model22 = AdaBoostClassifier(base_estimator =svm.SVC(gamma=1, kernel='poly'), algorithm='SAMME',n_estimators=25, random_state=0)
-#model22 = GradientBoostingClassifier(n_estimators=25,random_state=0)
-#model22 = ExtraTreesClassifier(n_estimators=40, random_state=0)
-tree = DecisionTreeClassifier(criterion='entropy', random_state=0)
-knn = KNeighborsClassifier(n_neighbors=9)
-svc = svm.SVC(gamma=1, kernel='poly')
-mlp = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80), max_iter=300, random_state=0)
-model22 = StackingClassifier(estimators=[('mlp',mlp),('forest',forest)], final_estimator=knn, cv=4)
-#model22 = VotingClassifier(estimators=[('RandomForest', forest), ('svc', svc), ('mlp', mlp)],voting='hard')
+
 if useTF:
     model22 = tfModel(len(set(y_train22)))
 if usePCA:
@@ -190,20 +157,13 @@ if useICA:
 if useIsomap:
     X_train22 = iso2.fit_transform(X_train22)
 
-# Training
-if useTF:
-    if not (usePCA or useICA or useIsomap):
-        X_train22 = X_train22.to_numpy()
-    y_train22 = y_train22.to_numpy()
-    LE2 = preprocessing.LabelEncoder()
-    LE2.fit(y_train22)
-    OneHot2 = OneHotEncoder()
-    y_train22 = OneHot2.fit_transform(y_train22.reshape(-1, 1)).toarray()
-    model22.fit(X_train22, y_train22, validation_split=0.1, epochs=nEpochs)
-    print(model22.summary())
-else:
-    model22.fit(X_train22, y_train22)
-    print(model22)
+# CLustering
+#clusteringTrain2= KMeans(n_clusters=k, n_init=3, random_state=0)
+clusteringTrain2 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+clusteringTrain2.fit(X_train22)
+silhouetteTrain2 = skm.silhouette_score(X_train22, clusteringTrain2.labels_)
+print(f"\nSilhoutette train 2: {silhouetteTrain2}")
+#print(clusteringTrain2)
 
 # y_train22 = list(y_train22)
 # distributionTrain12 = {i: y_train22.count(i) for i in set(y_train22)}
@@ -225,22 +185,17 @@ if useICA:
     X_test21 = ica1.transform(X_test21)
 if useIsomap:
     X_test21 = iso1.transform(X_test21)
-if useTF:
-    y_test21CPY = y_test21
-    if not (usePCA or useICA or useIsomap):
-        X_test21 = X_test21.to_numpy()
-    y_test21 = y_test21.to_numpy()
-    y_pred21 = model21.predict(X_test21)
 
-    y_pred21 = y_pred21.argmax(axis=-1)
-    y_pred21 = LE1.inverse_transform(y_pred21)
-else:
-    y_pred21 = model21.predict(X_test21)
 
-testing_accuracy1 = skm.accuracy_score(y_test21, y_pred21)
-print(f"Testing accuracy 1 = {testing_accuracy1}")
-# y_test21 = list(y_test21CPY)
-# distributionTest11 = {i: y_test21.count(i) for i in set(y_test21)}
+# Test Clustering
+#clusteringTest1 = KMeans(n_clusters=k, n_init=3, random_state=0)
+clusteringTest1 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+clusteringTest1.fit(X_test21)
+silhouetteTest1 = skm.silhouette_score(X_test21, clusteringTest1.labels_)
+print(f"\nSilhoutette test 1: {silhouetteTest1}")
+#print(clusteringTest1)
+
+
 
 # Game 2: Test
 X_test22 = testGame2.loc[:, trainGame2.columns != "playerID"]
@@ -252,24 +207,15 @@ if useICA:
     X_test22 = ica2.transform(X_test22)
 if useIsomap:
     X_test22 = iso2.transform(X_test22)
-if useTF:
-    if not (usePCA or useICA or useIsomap):
-        X_test22 = X_test22.to_numpy()
-    y_test22 = y_test22.to_numpy()
-    y_pred22 = model22.predict(X_test22)
-    y_pred22 = y_pred22.argmax(axis=-1)
-    y_pred22 = LE2.inverse_transform(y_pred22)
-else:
-    y_pred22 = model22.predict(X_test22)
-testing_accuracy2 = skm.accuracy_score(y_test22, y_pred22)
-print(f"Testing accuracy 2 = {testing_accuracy2}")
-# y_test22 = list(y_test22)
-# distributionTest12 = {i: y_test22.count(i) for i in set(y_test22)}
 
-w = [len(y_test21), len(y_test22)]
-acc = [testing_accuracy1, testing_accuracy2]
-weighted_acc = np.average(a=acc, weights=w)
-print(f"Total accuracy = {weighted_acc}")
+
+# Test Clustering
+#clusteringTest2 = KMeans(n_clusters=k, n_init=3, random_state=0)
+clusteringTest2 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+clusteringTest2.fit(X_test22)
+silhouetteTest2 = skm.silhouette_score(X_test22, clusteringTest2.labels_)
+print(f"\nSilhoutette test2: {silhouetteTest2}")
+#print(clusteringTest2)
 
 # Execution Time
 end = time.perf_counter()
