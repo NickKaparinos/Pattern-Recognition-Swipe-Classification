@@ -1,7 +1,10 @@
 # Project Recognission assignment test1
 import numpy as np
 import pandas as pd
-
+from sklearn import preprocessing
+#import ggplotp
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # import matplotlib.pyplot as plt
 
@@ -9,7 +12,6 @@ def read_and_preprocess(kFolds, gameFlag):
     # Read data
     data = pd.read_csv("Datasets/swipes.csv")
     data = data.iloc[:, :]
-    #data = data.drop([3264,3265,3266])
 
     ### Preprocessing ###
     # Choose features
@@ -18,16 +20,36 @@ def read_and_preprocess(kFolds, gameFlag):
     else:
         data = data.iloc[:, [ 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 19, 20]]
 
+    le = preprocessing.LabelEncoder()
+    temp= le.fit_transform(data.loc[:, 'playerID'])
+
+    #sns.set_theme()
+    # sns.color_palette("BrBG", 12)
+    # ax = sns.histplot(temp,stat='density',bins=125,palette='tab10')
+    # ax.set(xlabel="Number of swipes", ylabel = "Probability")
+    # ax.set_title("Distribution of number of swipes per user")
+    # plt.show()
+
+
+    y_dist = data["playerID"]
+    y_dist = list(y_dist)
+    distributionPlayer = {i: y_dist.count(i) for i in set(y_dist)}
+    distributionPlayer = {k: v for k, v in sorted(distributionPlayer.items(), key=lambda item: item[1], reverse=False)}
+
+
     # Delete players with only few swipes
     counts = data["playerID"].value_counts(ascending=True)
-    IDsToDelete = [i for i, v in counts.iteritems() if v < kFolds]
+    IDsToDelete = [i for i, v in counts.iteritems() if v <= 12]
     for i in IDsToDelete:
         data = data[data['playerID'] != i]
 
+    #yset = set(data["playerID"])
     # Rename playerIDs
-    playerID = sorted(set(data["playerID"]))
-    playerIDDict = dict(zip(playerID, list(range(len(playerID)))))
-    data.loc[:, 'playerID'] = data.copy()["playerID"].map(playerIDDict)
+    # playerID = sorted(set(data["playerID"]))
+    # playerIDDict = dict(zip(playerID, list(range(len(playerID)))))
+    # data.loc[:, 'playerID'] = data.copy()["playerID"].map(playerIDDict)
+    le1 = preprocessing.LabelEncoder()
+    data.loc[:, 'playerID'] = le1.fit_transform(data.loc[:, 'playerID'])
 
     if(gameFlag):
         # Games
@@ -43,16 +65,6 @@ def read_and_preprocess(kFolds, gameFlag):
                     break
         data["screen"] = data.copy()["screen"].map(screenDict)
 
-        # IDsToDelete = []
-        # gb = data.groupby('playerID')
-        # for i,df in gb:
-        #     gamesPlayed = set(df['screen'])
-        #     allGames = set(['MathisisGame','FocusGame'])
-        #     bothGamesPlayed = (gamesPlayed == allGames)
-        #     if(not bothGamesPlayed):
-        #         IDsToDelete.append(i)
-        # for i in IDsToDelete:
-        #     data = data[data['playerID'] != i]
 
     # Direction
     directionDictHorizontal = {"left": -1, "right": 1, "down": 0, "up": 0}

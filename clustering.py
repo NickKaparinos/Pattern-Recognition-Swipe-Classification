@@ -19,6 +19,7 @@ from sklearn.decomposition import PCA
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.decomposition import FastICA
+from sklearn.cluster import AgglomerativeClustering
 from sklearn.cluster import KMeans
 from sklearn.ensemble import VotingClassifier
 from sklearn.ensemble import BaggingClassifier
@@ -58,12 +59,14 @@ useTF = False
 usePCA = False
 useICA = False
 useIsomap = False
+useDBSCAN = False
 nEpochs = 30
 nComponents = 10
 kNeighbors = 15
-k = 2
-eps = 6
-minSamples = 5
+eps = 2.2
+minSamples = 10
+nClusters = 5
+linkType = 'ward'
 pca1 = PCA(n_components=nComponents)
 pca2 = PCA(n_components=nComponents)
 ica1 = FastICA(n_components=nComponents, max_iter=800, random_state=0)
@@ -129,14 +132,21 @@ if useIsomap:
     X_train21 = iso1.fit_transform(X_train21)
 
 # Clustering
-#clusteringTrain1 = KMeans(n_clusters=k, n_init=3, random_state=0)
+#clusteringTrain1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
 clusteringTrain1 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+#clusteringTrain1 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
 clusteringTrain1.fit(X_train21)
+distributionTrain1 = {i: list(clusteringTrain1.labels_).count(i) for i in set(clusteringTrain1.labels_)}
 silhouetteTrain1 = skm.silhouette_score(X_train21, clusteringTrain1.labels_)
+
 print("")
 print(clusteringTrain1)
-print(f"Silhoutette train 1: {silhouetteTrain1}")
-
+if useDBSCAN:
+    noisePercent = list(clusteringTrain1.labels_).count(0)/X_train21.shape[0]
+    print(f"\nSilhoutette train 1: {silhouetteTrain1}\nNoise percent: {noisePercent}")
+else:
+     print(f"\nSilhoutette train 1: {silhouetteTrain1}")
+print(distributionTrain1)
 
 # y_train21 = list(y_train21CPY)
 # distributionTrain11 = {i: y_train21.count(i) for i in set(y_train21)}
@@ -158,11 +168,17 @@ if useIsomap:
     X_train22 = iso2.fit_transform(X_train22)
 
 # CLustering
-#clusteringTrain2= KMeans(n_clusters=k, n_init=3, random_state=0)
+#clusteringTrain2= KMeans(n_clusters=nClusters, n_init=3, random_state=0)
 clusteringTrain2 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+#clusteringTrain2 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
 clusteringTrain2.fit(X_train22)
 silhouetteTrain2 = skm.silhouette_score(X_train22, clusteringTrain2.labels_)
-print(f"\nSilhoutette train 2: {silhouetteTrain2}")
+if useDBSCAN:
+    noisePercent = list(clusteringTrain2.labels_).count(0)/X_train22.shape[0]
+    print(f"\nSilhoutette train 2: {silhouetteTrain2}\nNoise percent: {noisePercent}")
+else:
+     print(f"\nSilhoutette train 2: {silhouetteTrain2}")
+
 #print(clusteringTrain2)
 
 # y_train22 = list(y_train22)
@@ -188,11 +204,16 @@ if useIsomap:
 
 
 # Test Clustering
-#clusteringTest1 = KMeans(n_clusters=k, n_init=3, random_state=0)
+#clusteringTest1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
 clusteringTest1 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+#clusteringTest1 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
 clusteringTest1.fit(X_test21)
 silhouetteTest1 = skm.silhouette_score(X_test21, clusteringTest1.labels_)
-print(f"\nSilhoutette test 1: {silhouetteTest1}")
+if useDBSCAN:
+    noisePercent = list(clusteringTest1.labels_).count(0)/X_test21.shape[0]
+    print(f"\nSilhoutette test1: {silhouetteTest1}\nNoise percent: {noisePercent}")
+else:
+     print(f"\nSilhoutette test1: {silhouetteTest1}")
 #print(clusteringTest1)
 
 
@@ -210,11 +231,16 @@ if useIsomap:
 
 
 # Test Clustering
-#clusteringTest2 = KMeans(n_clusters=k, n_init=3, random_state=0)
-clusteringTest2 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+#clusteringTest2 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
+clusteringTest2 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+#clusteringTest2 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
 clusteringTest2.fit(X_test22)
 silhouetteTest2 = skm.silhouette_score(X_test22, clusteringTest2.labels_)
-print(f"\nSilhoutette test2: {silhouetteTest2}")
+if useDBSCAN:
+    noisePercent = list(clusteringTest2.labels_).count(0)/X_test22.shape[0]
+    print(f"\nSilhoutette test 2: {silhouetteTest2}\nNoise percent: {noisePercent}")
+else:
+     print(f"\nSilhoutette test 2: {silhouetteTest2}")
 #print(clusteringTest2)
 
 # Execution Time
