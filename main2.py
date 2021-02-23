@@ -44,6 +44,7 @@ from sklearn.ensemble import StackingClassifier
 # from sklearn.gaussian_process import GaussianProcessClassifier
 # from sklearn.gaussian_process.kernels import RBF
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.cluster import Birch
 # # import matplotlib.pyplot as plt
 # import matplotlib.pyplot as plt
 from sklearn.manifold import Isomap
@@ -67,9 +68,7 @@ standardiseClusterLabels = False
 nEpochs = 200
 nComponents = 14
 kNeighbors = 15
-eps = 4
-minSamples = 5
-nClusters = 7
+nClusters = 6
 linkType = 'ward'
 pca1 = PCA(n_components=nComponents)
 pca2 = PCA(n_components=nComponents)
@@ -134,7 +133,8 @@ for train_index, test_index in skf.split(X, X['playerID']):
     scaler1 = preprocessing.StandardScaler().fit(X_train1)
     X_train1 = pd.DataFrame(scaler1.transform(X_train1.values), columns=X_train1.columns, index=X_train1.index)
     X_test1 = pd.DataFrame(scaler1.transform(X_test1.values), columns=X_test1.columns, index=X_test1.index)
-    model1 = KNeighborsClassifier(n_neighbors=7).fit(X_train1, y_train1)
+    #model1 = KNeighborsClassifier(n_neighbors=7).fit(X_train1, y_train1)
+    model1 = RandomForestClassifier(n_estimators=75,max_features=6, random_state=0, n_jobs=1).fit(X_train1, y_train1)
     y_predGameTrain = model1.predict(X_train1)
     y_predGameTest = model1.predict(X_test1)
 
@@ -158,7 +158,7 @@ for train_index, test_index in skf.split(X, X['playerID']):
 
     # Models
     #model21 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80, 80), max_iter=nEpochs, random_state=0)
-    #model21 = DecisionTreeClassifier(criterion='gini', random_state=0)
+    #model21 = DecisionTreeClassifier(criterion='entropy', random_state=0)
     #model21 = KNeighborsClassifier(n_neighbors=11)
     #model21 = svm.SVC(gamma=0.5, kernel='poly')
     #model21 = RandomForestClassifier(n_estimators=75,min_impurity_decrease=0.01,max_features=8, random_state=0, n_jobs=4)
@@ -176,16 +176,17 @@ for train_index, test_index in skf.split(X, X['playerID']):
     svc3 = svm.SVC(gamma=1.5, kernel='poly')
     svc4 = svm.SVC(gamma=0.4, kernel='poly')
     svc5 = svm.SVC(gamma=2.5, kernel='poly')
-    mlp = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80), max_iter=200, random_state=0)
-    mlp2 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80, 80), max_iter=200, random_state=0)
-    mlp3 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80), max_iter=200, random_state=0)
-    mlp4 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80, 80, 80), max_iter=200, random_state=0)
+    mlp = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80), max_iter=300, random_state=0)
+    mlp2 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80, 80), max_iter=300, random_state=0)
+    mlp3 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80), max_iter=300, random_state=0)
+    mlp4 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80, 80, 80), max_iter=300, random_state=0)
     #model21 = StackingClassifier(estimators=[('mlp',mlp)], final_estimator=knn, cv=4)
-    model21 = VotingClassifier(estimators=[('mlp',mlp),('mlp2',mlp2),('mlp3',mlp3),('mlp4',mlp4),('forest',forest),('svc',svc)],voting='hard')
     #model21 = VotingClassifier(estimators=[('mlp',mlp),('mlp2',mlp2),('mlp3',mlp3),('mlp4',mlp4),('forest',forest),('svc',svc)],voting='hard')
+    model21 = VotingClassifier(estimators=[('mlp',mlp),('mlp2',mlp2),('mlp3',mlp3),('mlp4',mlp4),('forest',forest),('svc',svc)],voting='hard')
     if useClustering:
         #clusteringTrain1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-        clusteringTrain1 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+        #clusteringTrain1 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+        clusteringTrain1 = Birch(n_clusters=nClusters)
         labels = clusteringTrain1.fit_predict(X_train21)
         if standardiseClusterLabels:
             labels = preprocessing.StandardScaler().fit_transform(labels.reshape(-1,1))
@@ -230,7 +231,7 @@ for train_index, test_index in skf.split(X, X['playerID']):
 
     # Models
     #model22 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80, 80), max_iter=nEpochs, random_state=0)
-    #model22 = DecisionTreeClassifier(criterion='gini', random_state=0)
+    #model22 = DecisionTreeClassifier(criterion='entropy', random_state=0)
     #model22 = KNeighborsClassifier(n_neighbors=11)
     #model22 = svm.SVC(gamma=0.5, kernel='poly')
     #odel22 = RandomForestClassifier(n_estimators=75,min_impurity_decrease=0.01,max_features=8, random_state=0, n_jobs=4)
@@ -253,11 +254,12 @@ for train_index, test_index in skf.split(X, X['playerID']):
     #model22 = StackingClassifier(estimators=[('mlp',mlp)], final_estimator=knn, cv=4)
     #model22 = VotingClassifier(estimators=[('RandomForest', forest), ('svc', svc), ('mlp', mlp)],voting='hard')
     #model22 = VotingClassifier(estimators=[('svc', svc), ('svc2', svc2), ('svc3', svc3),('svc4', svc4),('svc5', svc5)],voting='hard')
-    model22 = VotingClassifier(estimators=[('mlp',mlp),('mlp2',mlp2),('mlp3',mlp3),('mlp4',mlp4),('forest',forest),('svc',svc)],voting='hard')
     #model22 = VotingClassifier(estimators=[('mlp',mlp),('mlp2',mlp2),('mlp3',mlp3),('mlp4',mlp4),('forest',forest),('svc',svc)],voting='hard')
+    model22 = VotingClassifier(estimators=[('mlp',mlp),('mlp2',mlp2),('mlp3',mlp3),('mlp4',mlp4),('forest',forest),('svc',svc)],voting='hard')
     if useClustering:
         #clusteringTrain2 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-        clusteringTrain2 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+        #clusteringTrain2 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+        clusteringTrain2 = Birch(n_clusters=nClusters)
         labels = clusteringTrain2.fit_predict(X_train22)
         if standardiseClusterLabels:
             labels = preprocessing.StandardScaler().fit_transform(labels.reshape(-1,1))
@@ -306,7 +308,8 @@ for train_index, test_index in skf.split(X, X['playerID']):
     X_test21 = pd.DataFrame(scaler21.transform(X_test21.values), columns=X_test21.columns, index=X_test21.index)
     if useClustering:
         #clusteringTest1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-        clusteringTest1 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+        #clusteringTest1 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+        clusteringTest1 = Birch(n_clusters=nClusters)
         labels = clusteringTrain1.fit_predict(X_test21)
         if standardiseClusterLabels:
             labels = preprocessing.StandardScaler().fit_transform(labels.reshape(-1,1))
@@ -342,7 +345,8 @@ for train_index, test_index in skf.split(X, X['playerID']):
     X_test22 = pd.DataFrame(scaler22.transform(X_test22.values), columns=X_test22.columns, index=X_test22.index)
     if useClustering:
         #clusteringTest2 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-        clusteringTest2 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+        #clusteringTest2 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+        clusteringTest2 = Birch(n_clusters=nClusters)
         labels = clusteringTest2.fit_predict(X_test22)
         if standardiseClusterLabels:
             labels = preprocessing.StandardScaler().fit_transform(labels.reshape(-1,1))
@@ -379,5 +383,6 @@ print(f"{kFolds}-fold accuracy = {mean(foldAccuracy):.8f}")
 # Execution Time
 end = time.perf_counter()
 print(f"\nExecution time = {end - start:.2f} second(s)")
+
 
 debug = True

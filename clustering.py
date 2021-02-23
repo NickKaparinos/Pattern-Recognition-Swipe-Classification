@@ -31,6 +31,8 @@ from sklearn.ensemble import AdaBoostClassifier
 from sklearn.ensemble import ExtraTreesClassifier
 from sklearn.ensemble import StackingClassifier
 from sklearn.cluster import DBSCAN
+from statistics import mean
+from sklearn.cluster import Birch
 # from sklearn.model_selection import cross_val_score
 # from sklearn.model_selection import StratifiedKFold
 # from sklearn.feature_selection import SelectFromModel
@@ -52,28 +54,24 @@ from preprocess import read_and_preprocess
 from tfModel import tfModel
 
 ## OPTIONS ###
-os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
-useTF = False
 usePCA = False
 useICA = False
 useIsomap = False
 useDBSCAN = False
-nEpochs = 30
 nComponents = 10
 kNeighbors = 15
 eps = 2.2
 minSamples = 10
-nClusters = 5
-linkType = 'ward'
+nClusters = 6
+linkType = 'complete'
 pca1 = PCA(n_components=nComponents)
 pca2 = PCA(n_components=nComponents)
 ica1 = FastICA(n_components=nComponents, max_iter=800, random_state=0)
 ica2 = FastICA(n_components=nComponents, max_iter=800, random_state=0)
 iso1 = Isomap(n_neighbors=kNeighbors, n_components=nComponents)
 iso2 = Isomap(n_neighbors=kNeighbors, n_components=nComponents)
-print(f"Using tensorflow : {useTF}")
 print(f"Using PCA : {usePCA}")
 print(f"Using ICA : {useICA}")
 print(f"Using Isomap : {useIsomap}")
@@ -82,15 +80,14 @@ if usePCA or useICA or useIsomap:
 
 ### Read data ###
 kFolds = 4
+silhouetteList = []
 
 X, y = read_and_preprocess(kFolds, True)
 
 ### First Classification ###
 # Train test split
 start = time.perf_counter()
-X_train1, X_test1, y_train1, y_test1 = train_test_split(X, y, stratify=X['playerID'], test_size=0.25, random_state=42)
-# yl = list(y)
-# distributionGame = {i: yl.count(i) for i in set(yl)}
+X_train1, X_test1, y_train1, y_test1 = train_test_split(X, y, stratify=X['playerID'], test_size=0.25, random_state=0)
 x_train1PID = X_train1["playerID"]
 X_train1 = X_train1.drop(labels="playerID", axis=1)
 x_test1PID = X_test1["playerID"]
@@ -103,11 +100,6 @@ X_test1 = pd.DataFrame(scaler1.transform(X_test1.values), columns=X_test1.column
 model1 = KNeighborsClassifier(n_neighbors=7).fit(X_train1, y_train1)
 y_predGameTrain = model1.predict(X_train1)
 y_predGameTest = model1.predict(X_test1)
-
-game_train_accuracy = skm.accuracy_score(y_train1, y_predGameTrain)
-print(f"Game train accuracy = {game_train_accuracy}")
-game_test_accuracy = skm.accuracy_score(y_test1, y_predGameTest)
-print(f"Game test accuracy = {game_test_accuracy}")
 
 # Second classification ###
 X_train1["playerID"] = x_train1PID
@@ -122,8 +114,6 @@ y_train21 = trainGame1["playerID"]
 scaler21 = preprocessing.StandardScaler().fit(X_train21)
 X_train21 = pd.DataFrame(scaler21.transform(X_train21.values), columns=X_train21.columns, index=X_train21.index)
 
-if useTF:
-    model21 = tfModel(len(set(y_train21)))
 if usePCA:
     X_train21 = pca1.fit_transform(X_train21)
 if useICA:
@@ -133,11 +123,13 @@ if useIsomap:
 
 # Clustering
 #clusteringTrain1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-clusteringTrain1 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+#clusteringTrain1 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
 #clusteringTrain1 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+clusteringTrain1 = Birch(n_clusters=nClusters)
 clusteringTrain1.fit(X_train21)
 distributionTrain1 = {i: list(clusteringTrain1.labels_).count(i) for i in set(clusteringTrain1.labels_)}
 silhouetteTrain1 = skm.silhouette_score(X_train21, clusteringTrain1.labels_)
+silhouetteList.append(silhouetteTrain1)
 
 print("")
 print(clusteringTrain1)
@@ -148,8 +140,6 @@ else:
      print(f"\nSilhoutette train 1: {silhouetteTrain1}")
 print(distributionTrain1)
 
-# y_train21 = list(y_train21CPY)
-# distributionTrain11 = {i: y_train21.count(i) for i in set(y_train21)}
 
 # Game 2: Clustering
 X_train22 = trainGame2.loc[:, trainGame2.columns != "playerID"]
@@ -158,8 +148,6 @@ scaler22 = preprocessing.StandardScaler().fit(X_train22)
 X_train22 = pd.DataFrame(scaler22.transform(X_train22.values), columns=X_train22.columns, index=X_train22.index)
 
 
-if useTF:
-    model22 = tfModel(len(set(y_train22)))
 if usePCA:
     X_train22 = pca2.fit_transform(X_train22)
 if useICA:
@@ -169,20 +157,19 @@ if useIsomap:
 
 # CLustering
 #clusteringTrain2= KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-clusteringTrain2 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+#clusteringTrain2 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
 #clusteringTrain2 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+clusteringTrain2 = Birch(n_clusters=nClusters)
 clusteringTrain2.fit(X_train22)
+distributionTrain2 = {i: list(clusteringTrain2.labels_).count(i) for i in set(clusteringTrain2.labels_)}
 silhouetteTrain2 = skm.silhouette_score(X_train22, clusteringTrain2.labels_)
+silhouetteList.append(silhouetteTrain2)
 if useDBSCAN:
     noisePercent = list(clusteringTrain2.labels_).count(0)/X_train22.shape[0]
     print(f"\nSilhoutette train 2: {silhouetteTrain2}\nNoise percent: {noisePercent}")
 else:
      print(f"\nSilhoutette train 2: {silhouetteTrain2}")
-
-#print(clusteringTrain2)
-
-# y_train22 = list(y_train22)
-# distributionTrain12 = {i: y_train22.count(i) for i in set(y_train22)}
+print(distributionTrain2)
 
 # Second classification test
 X_test1["playerID"] = x_test1PID
@@ -205,16 +192,19 @@ if useIsomap:
 
 # Test Clustering
 #clusteringTest1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-clusteringTest1 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+#clusteringTest1 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
 #clusteringTest1 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+clusteringTest1 = Birch(n_clusters=nClusters)
 clusteringTest1.fit(X_test21)
+distributionTest1 = {i: list(clusteringTest1.labels_).count(i) for i in set(clusteringTest1.labels_)}
 silhouetteTest1 = skm.silhouette_score(X_test21, clusteringTest1.labels_)
+silhouetteList.append(silhouetteTest1)
 if useDBSCAN:
     noisePercent = list(clusteringTest1.labels_).count(0)/X_test21.shape[0]
     print(f"\nSilhoutette test1: {silhouetteTest1}\nNoise percent: {noisePercent}")
 else:
      print(f"\nSilhoutette test1: {silhouetteTest1}")
-#print(clusteringTest1)
+print(distributionTest1)
 
 
 
@@ -232,16 +222,25 @@ if useIsomap:
 
 # Test Clustering
 #clusteringTest2 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-clusteringTest2 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
 #clusteringTest2 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
+#clusteringTest2 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+clusteringTest2 = Birch(n_clusters=nClusters)
 clusteringTest2.fit(X_test22)
+distributionTest2 = {i: list(clusteringTest2.labels_).count(i) for i in set(clusteringTest2.labels_)}
 silhouetteTest2 = skm.silhouette_score(X_test22, clusteringTest2.labels_)
+silhouetteList.append(silhouetteTest2)
 if useDBSCAN:
     noisePercent = list(clusteringTest2.labels_).count(0)/X_test22.shape[0]
     print(f"\nSilhoutette test 2: {silhouetteTest2}\nNoise percent: {noisePercent}")
 else:
      print(f"\nSilhoutette test 2: {silhouetteTest2}")
-#print(clusteringTest2)
+print(distributionTest2)
+
+
+w = [X_train21.shape[0], X_train22.shape[0], X_test21.shape[0], X_test22.shape[0]]
+weighted_silhouette = np.average(a=silhouetteList, weights=w)
+print(f"\nTotal silhouette: {weighted_silhouette:.6f}")
+
 
 # Execution Time
 end = time.perf_counter()
