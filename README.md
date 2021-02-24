@@ -1,4 +1,4 @@
-## Pattern-Recognition-Assignment
+## Pattern-Recognition: Swipe Classification
 ## Aristotle University of Thessaloniki
 ## Nick Kaparinos
 ## 2021
