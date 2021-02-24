@@ -1,5 +1,5 @@
 ## Pattern Recognition: Swipe Classification
-## Aristotle University of Thessaloniki
+## Aristotle University of Thessaloniki (AUTh)
 ## Nick Kaparinos
 ## 2021
 
