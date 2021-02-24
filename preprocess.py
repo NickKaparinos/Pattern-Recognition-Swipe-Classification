@@ -1,4 +1,7 @@
-# Project Recognission assignment test1
+# Patter Recognition Project
+# Nick Kaparinos
+# Vasiliki Zarkadoula
+# 2021
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
@@ -8,10 +11,10 @@ import seaborn as sns
 
 # import matplotlib.pyplot as plt
 
-def read_and_preprocess(kFolds, gameFlag):
+def read_and_preprocess(gameFlag):
     # Read data
     data = pd.read_csv("Datasets/swipes.csv")
-    data = data.iloc[:1000, :]
+    #data = data.iloc[:50000, :]                 # Use a subset of the full dataset
 
     ### Preprocessing ###
     # Choose features
@@ -23,6 +26,7 @@ def read_and_preprocess(kFolds, gameFlag):
     le = preprocessing.LabelEncoder()
     temp= le.fit_transform(data.loc[:, 'playerID'])
 
+    # Number of swipes per user distribution
     #sns.set_theme()
     # sns.color_palette("BrBG", 12)
     # ax = sns.histplot(temp,stat='density',bins=125,palette='tab10')
@@ -30,24 +34,12 @@ def read_and_preprocess(kFolds, gameFlag):
     # ax.set_title("Distribution of number of swipes per user")
     # plt.show()
 
-
-    # y_dist = data["playerID"]
-    # y_dist = list(y_dist)
-    # distributionPlayer = {i: y_dist.count(i) for i in set(y_dist)}
-    # distributionPlayer = {k: v for k, v in sorted(distributionPlayer.items(), key=lambda item: item[1], reverse=False)}
-
-
     # Delete players with only few swipes
     counts = data["playerID"].value_counts(ascending=True)
     IDsToDelete = [i for i, v in counts.iteritems() if v <= 12]
     for i in IDsToDelete:
         data = data[data['playerID'] != i]
 
-    #yset = set(data["playerID"])
-    # Rename playerIDs
-    # playerID = sorted(set(data["playerID"]))
-    # playerIDDict = dict(zip(playerID, list(range(len(playerID)))))
-    # data.loc[:, 'playerID'] = data.copy()["playerID"].map(playerIDDict)
     le1 = preprocessing.LabelEncoder()
     data.loc[:, 'playerID'] = le1.fit_transform(data.loc[:, 'playerID'])
 
@@ -67,7 +59,7 @@ def read_and_preprocess(kFolds, gameFlag):
         data["screen"] = data.copy()["screen"].map(screenDict)
 
 
-    # Direction Preprocessing
+    # Direction Feature split
     directionDictHorizontal = {"left": -1, "right": 1, "down": 0, "up": 0}
     directionDictVertical = {"left": 0, "right": 0, "down": -1, "up": 1}
     dataCopy = data.copy()

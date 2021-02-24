@@ -1,6 +1,7 @@
 # Patter Recognition Project
-# Nick Kaparinos
-# 2021
+# # Nick Kaparinos
+# # Vasiliki Zarkadoula
+# # 2021
 import time
 
 import pandas as pd
@@ -14,8 +15,8 @@ pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
 
 # # Read data
+X,y = read_and_preprocess(False)
 kFolds = 4
-X,y = read_and_preprocess(kFolds, False)
 
 ### Model ###
 # SVM

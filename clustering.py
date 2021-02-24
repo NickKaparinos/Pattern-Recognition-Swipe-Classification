@@ -1,57 +1,21 @@
-# Project Recognission two level classification
-import os
+# Patter Recognition Project
+# Nick Kaparinos
+# Vasiliki Zarkadoula
+# 2021
 import time
-
-#explicitly require this experimental feature
-#from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-#now you can import normally from ensemble
-#from sklearn.ensemble import HistGradientBoostingClassifier
-
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.ensemble import IsolationForest
-from sklearn.ensemble import RandomTreesEmbedding
 
 import numpy as np
 import pandas as pd
 import sklearn.metrics as skm
 from sklearn import preprocessing
+from sklearn.cluster import Birch
+from sklearn.decomposition import FastICA
 from sklearn.decomposition import PCA
+from sklearn.manifold import Isomap
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.decomposition import FastICA
-from sklearn.cluster import AgglomerativeClustering
-from sklearn.cluster import KMeans
-from sklearn.ensemble import VotingClassifier
-from sklearn.ensemble import BaggingClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neural_network import MLPClassifier
-from sklearn import svm
-from sklearn.ensemble import BaggingClassifier
-from sklearn.ensemble import AdaBoostClassifier
-from sklearn.ensemble import ExtraTreesClassifier
-from sklearn.ensemble import StackingClassifier
-from sklearn.cluster import DBSCAN
-from statistics import mean
-from sklearn.cluster import Birch
-# from sklearn.model_selection import cross_val_score
-# from sklearn.model_selection import StratifiedKFold
-# from sklearn.feature_selection import SelectFromModel
-# from sklearn.model_selection import GridSearchCV
-# from sklearn.naive_bayes import GaussianNB
-# from sklearn.linear_model import SGDClassifier
-# from sklearn.kernel_approximation import RBFSampler
-# from sklearn.feature_selection import SelectKBest
-# from sklearn.gaussian_process import GaussianProcessClassifier
-# from sklearn.gaussian_process.kernels import RBF
-from sklearn.tree import DecisionTreeClassifier
-# # import matplotlib.pyplot as plt
-# import matplotlib.pyplot as plt
-from sklearn.manifold import Isomap
-from sklearn.preprocessing import OneHotEncoder
 
-# import matplotlib.pyplot as plt
 from preprocess import read_and_preprocess
-from tfModel import tfModel
 
 ## OPTIONS ###
 pd.set_option('display.max_columns', None)
@@ -82,7 +46,7 @@ if usePCA or useICA or useIsomap:
 kFolds = 4
 silhouetteList = []
 
-X, y = read_and_preprocess(kFolds, True)
+X, y = read_and_preprocess(True)
 
 ### First Classification ###
 # Train test split
@@ -122,9 +86,7 @@ if useIsomap:
     X_train21 = iso1.fit_transform(X_train21)
 
 # Clustering
-#clusteringTrain1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-#clusteringTrain1 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
-#clusteringTrain1 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+# clusteringTrain1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
 clusteringTrain1 = Birch(n_clusters=nClusters)
 clusteringTrain1.fit(X_train21)
 distributionTrain1 = {i: list(clusteringTrain1.labels_).count(i) for i in set(clusteringTrain1.labels_)}
@@ -134,19 +96,17 @@ silhouetteList.append(silhouetteTrain1)
 print("")
 print(clusteringTrain1)
 if useDBSCAN:
-    noisePercent = list(clusteringTrain1.labels_).count(0)/X_train21.shape[0]
+    noisePercent = list(clusteringTrain1.labels_).count(0) / X_train21.shape[0]
     print(f"\nSilhoutette train 1: {silhouetteTrain1}\nNoise percent: {noisePercent}")
 else:
-     print(f"\nSilhoutette train 1: {silhouetteTrain1}")
+    print(f"\nSilhoutette train 1: {silhouetteTrain1}")
 print(distributionTrain1)
-
 
 # Game 2: Clustering
 X_train22 = trainGame2.loc[:, trainGame2.columns != "playerID"]
 y_train22 = trainGame2["playerID"]
 scaler22 = preprocessing.StandardScaler().fit(X_train22)
 X_train22 = pd.DataFrame(scaler22.transform(X_train22.values), columns=X_train22.columns, index=X_train22.index)
-
 
 if usePCA:
     X_train22 = pca2.fit_transform(X_train22)
@@ -156,19 +116,17 @@ if useIsomap:
     X_train22 = iso2.fit_transform(X_train22)
 
 # CLustering
-#clusteringTrain2= KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-#clusteringTrain2 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
-#clusteringTrain2 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+# clusteringTrain2= KMeans(n_clusters=nClusters, n_init=3, random_state=0)
 clusteringTrain2 = Birch(n_clusters=nClusters)
 clusteringTrain2.fit(X_train22)
 distributionTrain2 = {i: list(clusteringTrain2.labels_).count(i) for i in set(clusteringTrain2.labels_)}
 silhouetteTrain2 = skm.silhouette_score(X_train22, clusteringTrain2.labels_)
 silhouetteList.append(silhouetteTrain2)
 if useDBSCAN:
-    noisePercent = list(clusteringTrain2.labels_).count(0)/X_train22.shape[0]
+    noisePercent = list(clusteringTrain2.labels_).count(0) / X_train22.shape[0]
     print(f"\nSilhoutette train 2: {silhouetteTrain2}\nNoise percent: {noisePercent}")
 else:
-     print(f"\nSilhoutette train 2: {silhouetteTrain2}")
+    print(f"\nSilhoutette train 2: {silhouetteTrain2}")
 print(distributionTrain2)
 
 # Second classification test
@@ -189,24 +147,19 @@ if useICA:
 if useIsomap:
     X_test21 = iso1.transform(X_test21)
 
-
 # Test Clustering
-#clusteringTest1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-#clusteringTest1 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
-#clusteringTest1 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+# clusteringTest1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
 clusteringTest1 = Birch(n_clusters=nClusters)
 clusteringTest1.fit(X_test21)
 distributionTest1 = {i: list(clusteringTest1.labels_).count(i) for i in set(clusteringTest1.labels_)}
 silhouetteTest1 = skm.silhouette_score(X_test21, clusteringTest1.labels_)
 silhouetteList.append(silhouetteTest1)
 if useDBSCAN:
-    noisePercent = list(clusteringTest1.labels_).count(0)/X_test21.shape[0]
+    noisePercent = list(clusteringTest1.labels_).count(0) / X_test21.shape[0]
     print(f"\nSilhoutette test1: {silhouetteTest1}\nNoise percent: {noisePercent}")
 else:
-     print(f"\nSilhoutette test1: {silhouetteTest1}")
+    print(f"\nSilhoutette test1: {silhouetteTest1}")
 print(distributionTest1)
-
-
 
 # Game 2: Test
 X_test22 = testGame2.loc[:, trainGame2.columns != "playerID"]
@@ -219,31 +172,24 @@ if useICA:
 if useIsomap:
     X_test22 = iso2.transform(X_test22)
 
-
 # Test Clustering
-#clusteringTest2 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-#clusteringTest2 = DBSCAN(eps=eps, min_samples=minSamples,n_jobs=1)
-#clusteringTest2 = AgglomerativeClustering(n_clusters=nClusters, linkage=linkType)
+# clusteringTest2 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
 clusteringTest2 = Birch(n_clusters=nClusters)
 clusteringTest2.fit(X_test22)
 distributionTest2 = {i: list(clusteringTest2.labels_).count(i) for i in set(clusteringTest2.labels_)}
 silhouetteTest2 = skm.silhouette_score(X_test22, clusteringTest2.labels_)
 silhouetteList.append(silhouetteTest2)
 if useDBSCAN:
-    noisePercent = list(clusteringTest2.labels_).count(0)/X_test22.shape[0]
+    noisePercent = list(clusteringTest2.labels_).count(0) / X_test22.shape[0]
     print(f"\nSilhoutette test 2: {silhouetteTest2}\nNoise percent: {noisePercent}")
 else:
-     print(f"\nSilhoutette test 2: {silhouetteTest2}")
+    print(f"\nSilhoutette test 2: {silhouetteTest2}")
 print(distributionTest2)
-
 
 w = [X_train21.shape[0], X_train22.shape[0], X_test21.shape[0], X_test22.shape[0]]
 weighted_silhouette = np.average(a=silhouetteList, weights=w)
 print(f"\nTotal silhouette: {weighted_silhouette:.6f}")
 
-
 # Execution Time
 end = time.perf_counter()
 print(f"\nExecution time = {end - start:.2f} second(s)")
-
-debug = True
