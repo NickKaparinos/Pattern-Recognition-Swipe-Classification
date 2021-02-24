@@ -5,4 +5,4 @@
 
 **Version 1.0**
 
-User swipe authentication using classification techniques.
+User swipe authentication using machine learning classification techniques.
