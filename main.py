@@ -1,7 +1,6 @@
 # Patter Recognition Project
-# # Nick Kaparinos
-# # Vasiliki Zarkadoula
-# # 2021
+# Nick Kaparinos
+# 2021
 import time
 
 import pandas as pd
