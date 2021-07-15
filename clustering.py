@@ -1,9 +1,9 @@
-# Patter Recognition Project
-# Nick Kaparinos
-# Vasiliki Zarkadoula
-# 2021
+"""
+Nick Kaparinos
+User Swipe Classification
+2021
+"""
 import time
-
 import numpy as np
 import pandas as pd
 import sklearn.metrics as skm
@@ -14,7 +14,6 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import Isomap
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
-
 from preprocess import read_and_preprocess
 
 ## OPTIONS ###

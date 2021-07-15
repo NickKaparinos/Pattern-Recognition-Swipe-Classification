@@ -5,15 +5,11 @@ from statistics import mean
 import numpy as np
 import pandas as pd
 import sklearn.metrics as skm
-from sklearn import preprocessing
-from sklearn import svm
-from sklearn.cluster import Birch
-from sklearn.decomposition import FastICA
-from sklearn.decomposition import PCA
-from sklearn.ensemble import BaggingClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.ensemble import VotingClassifier
+from sklearn import preprocessing, svm
+from sklearn.decomposition import FastICA, PCA
+from sklearn.ensemble import BaggingClassifier, RandomForestClassifier, VotingClassifier
 from sklearn.manifold import Isomap
+from sklearn.cluster import KMeans
 from sklearn.manifold import LocallyLinearEmbedding
 from sklearn.model_selection import StratifiedKFold
 from sklearn.neighbors import KNeighborsClassifier
@@ -21,7 +17,6 @@ from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.tree import DecisionTreeClassifier
 
-# import matplotlib.pyplot as plt
 from preprocess import read_and_preprocess
 from tfModel import tfModel
 
@@ -109,16 +104,6 @@ for train_index, test_index in skf.split(X, X['playerID']):
     X_train21 = pd.DataFrame(scaler21.transform(X_train21.values), columns=X_train21.columns, index=X_train21.index)
 
     # Models
-    # model21 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80, 80), max_iter=nEpochs, random_state=0)
-    # model21 = DecisionTreeClassifier(criterion='entropy', random_state=0)
-    # model21 = KNeighborsClassifier(n_neighbors=11)
-    # model21 = svm.SVC(gamma=0.5, kernel='poly')
-    # model21 = RandomForestClassifier(n_estimators=75,min_impurity_decrease=0.01,max_features=8, random_state=0, n_jobs=4)
-    # model21 = AdaBoostClassifier(base_estimator = svm.SVC(gamma=1, kernel='poly'),algorithm='SAMME',n_estimators=25, random_state=0)
-    # model21 = HistGradientBoostingClassifier(random_state=0)
-    # model21 = GradientBoostingClassifier(n_estimators=25,random_state=0)
-    # model21 = ExtraTreesClassifier(n_estimators=40, random_state=0)
-    # model21 = IsolationForest(n_estimators=40,random_state=0)
     tree = DecisionTreeClassifier(criterion='entropy', random_state=0)
     knn = KNeighborsClassifier(n_neighbors=11)
     svc = svm.SVC(gamma=1, kernel='poly')
@@ -134,8 +119,8 @@ for train_index, test_index in skf.split(X, X['playerID']):
     forest = RandomForestClassifier(n_estimators=75, max_features=8, random_state=0, n_jobs=1)
     bagging = BaggingClassifier(max_features=8, n_estimators=40, n_jobs=1, random_state=0)
     model21 = VotingClassifier(
-    estimators=[('mlp', mlp), ('mlp2', mlp2), ('mlp3', mlp3), ('mlp4', mlp4), ('forest', forest), ('svc', svc)],
-    voting='hard')
+        estimators=[('mlp', mlp), ('mlp2', mlp2), ('mlp3', mlp3), ('mlp4', mlp4), ('forest', forest), ('svc', svc)],
+        voting='hard')
     if useClustering:
         # clusteringTrain1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
         clusteringTrain1 = Birch(n_clusters=nClusters)
@@ -181,14 +166,6 @@ for train_index, test_index in skf.split(X, X['playerID']):
     X_train22 = pd.DataFrame(scaler22.transform(X_train22.values), columns=X_train22.columns, index=X_train22.index)
 
     # Models
-    # model22 = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(80, 80, 80, 80), max_iter=nEpochs, random_state=0)
-    # model22 = DecisionTreeClassifier(criterion='entropy', random_state=0)
-    # model22 = KNeighborsClassifier(n_neighbors=11)
-    # model22 = svm.SVC(gamma=0.5, kernel='poly')
-    # model22 = RandomForestClassifier(n_estimators=75,min_impurity_decrease=0.01,max_features=8, random_state=0, n_jobs=4)
-    # model22 = AdaBoostClassifier(base_estimator =svm.SVC(gamma=1, kernel='poly'), algorithm='SAMME',n_estimators=25, random_state=0)
-    # model22 = GradientBoostingClassifier(n_estimators=25,random_state=0)
-    # model22 = ExtraTreesClassifier(n_estimators=40, random_state=0)
     tree = DecisionTreeClassifier(criterion='entropy', random_state=0)
     knn = KNeighborsClassifier(n_neighbors=11)
     svc = svm.SVC(gamma=1, kernel='poly')
@@ -203,13 +180,11 @@ for train_index, test_index in skf.split(X, X['playerID']):
                          random_state=0)
     forest = RandomForestClassifier(n_estimators=75, max_features=8, random_state=0, n_jobs=1)
     bagging = BaggingClassifier(max_features=8, n_estimators=40, n_jobs=1, random_state=0)
-    # model22 = StackingClassifier(estimators=[('mlp',mlp)], final_estimator=knn, cv=4)
     model22 = VotingClassifier(
         estimators=[('mlp', mlp), ('mlp2', mlp2), ('mlp3', mlp3), ('mlp4', mlp4), ('forest', forest), ('svc', svc)],
         voting='hard')
     if useClustering:
-        # clusteringTrain2 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-        clusteringTrain2 = Birch(n_clusters=nClusters)
+        clusteringTrain2 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
         labels = clusteringTrain2.fit_predict(X_train22)
         if standardiseClusterLabels:
             labels = preprocessing.StandardScaler().fit_transform(labels.reshape(-1, 1))
@@ -256,8 +231,7 @@ for train_index, test_index in skf.split(X, X['playerID']):
     y_test21 = testGame1["playerID"]
     X_test21 = pd.DataFrame(scaler21.transform(X_test21.values), columns=X_test21.columns, index=X_test21.index)
     if useClustering:
-        # clusteringTest1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-        clusteringTest1 = Birch(n_clusters=nClusters)
+        clusteringTest1 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
         labels = clusteringTest1.fit_predict(X_test21)
         if standardiseClusterLabels:
             labels = preprocessing.StandardScaler().fit_transform(labels.reshape(-1, 1))
@@ -290,8 +264,7 @@ for train_index, test_index in skf.split(X, X['playerID']):
     y_test22 = testGame2["playerID"]
     X_test22 = pd.DataFrame(scaler22.transform(X_test22.values), columns=X_test22.columns, index=X_test22.index)
     if useClustering:
-        # clusteringTest2 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
-        clusteringTest2 = Birch(n_clusters=nClusters)
+        clusteringTest2 = KMeans(n_clusters=nClusters, n_init=3, random_state=0)
         labels = clusteringTest2.fit_predict(X_test22)
         if standardiseClusterLabels:
             labels = preprocessing.StandardScaler().fit_transform(labels.reshape(-1, 1))

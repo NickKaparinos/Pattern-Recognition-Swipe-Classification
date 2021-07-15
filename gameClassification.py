@@ -1,4 +1,8 @@
-# Project Recognission Grid Search 1
+"""
+Nick Kaparinos
+User Swipe Classification
+2021
+"""
 import time
 import pandas as pd
 import numpy as np
@@ -28,24 +32,23 @@ pd.set_option('display.max_rows', None)
 
 # # Read data
 kFolds = 4
-X,y = read_and_preprocess(True)
-
+X, y = read_and_preprocess(True)
 
 X.drop(labels="playerID", axis=1, inplace=True)
 
-### Models ###
+# Models
 # KNN classifier
 model = KNeighborsClassifier()
 
-### Grid Search ###
+# Grid Search
 start = time.perf_counter()
 X = preprocessing.StandardScaler().fit_transform(X)
 
-parameters = {'n_neighbors':[3,5,7,9]}
+parameters = {'n_neighbors': [3, 5, 7, 9]}
 print(model)
 gridSearch = GridSearchCV(model, parameters, cv=kFolds, n_jobs=kFolds).fit(X, y)
 results = pd.DataFrame(gridSearch.cv_results_)
-results = results.drop(labels=["std_fit_time","std_score_time","params"],axis=1)
+results = results.drop(labels=["std_fit_time", "std_score_time", "params"], axis=1)
 print(results)
 
 # Execution Time

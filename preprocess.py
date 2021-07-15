@@ -1,33 +1,33 @@
-# Patter Recognition Project
-# Nick Kaparinos
-# Vasiliki Zarkadoula
-# 2021
+"""
+Nick Kaparinos
+User Swipe Classification
+2021
+"""
+
 import numpy as np
 import pandas as pd
 from sklearn import preprocessing
-#import ggplotp
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-# import matplotlib.pyplot as plt
 
 def read_and_preprocess(gameFlag):
     # Read data
     data = pd.read_csv("Datasets/swipes.csv")
-    #data = data.iloc[:50000, :]                 # Use a subset of the full dataset
+    data = data.iloc[:50000, :]  # Use a subset of the full dataset
 
-    ### Preprocessing ###
+    # Preprocessing
     # Choose features
-    if(gameFlag):
-        data = data.iloc[:, [ 1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 19, 20]]
+    if (gameFlag):
+        data = data.iloc[:, [1, 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 19, 20]]
     else:
-        data = data.iloc[:, [ 2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 19, 20]]
+        data = data.iloc[:, [2, 3, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 18, 19, 20]]
 
     le = preprocessing.LabelEncoder()
-    temp= le.fit_transform(data.loc[:, 'playerID'])
+    temp = le.fit_transform(data.loc[:, 'playerID'])
 
     # Number of swipes per user distribution
-    #sns.set_theme()
+    # sns.set_theme()
     # sns.color_palette("BrBG", 12)
     # ax = sns.histplot(temp,stat='density',bins=125,palette='tab10')
     # ax.set(xlabel="Number of swipes", ylabel = "Probability")
@@ -44,7 +44,7 @@ def read_and_preprocess(gameFlag):
     data.loc[:, 'playerID'] = le1.fit_transform(data.loc[:, 'playerID'])
 
     # Transform screen column into game column
-    if(gameFlag):
+    if (gameFlag):
         # Games
         screen = data["screen"]
         uniqueScreens = screen.unique()
@@ -57,7 +57,6 @@ def read_and_preprocess(gameFlag):
                     screenDict[screen] = game
                     break
         data["screen"] = data.copy()["screen"].map(screenDict)
-
 
     # Direction Feature split
     directionDictHorizontal = {"left": -1, "right": 1, "down": 0, "up": 0}
@@ -73,13 +72,13 @@ def read_and_preprocess(gameFlag):
         data = data[data[i] > np.percentile(data[i], 0.1)]
         data = data[data[i] < np.percentile(data[i], 99.9)]
 
-    # dataCorrelation = data.corr()
 
+    # Print Percentiles
     # for i in range(len(dataSVM.columns)):
     #     print(dataSVM.iloc[:, i].describe(percentiles=[0.001,0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 0.75, 0.9, 0.95, 0.975, 0.99, 0.999]))
 
     # X and y
-    if(gameFlag):
+    if (gameFlag):
         X = data.loc[:, data.columns != "screen"]
         y = data["screen"]
     else:
